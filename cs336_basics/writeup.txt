@@ -1,0 +1,10 @@
+Problem 1:
+	a. '\x00', which is a hexadecimal representation of empty (NUL) character.
+	b. It will return the string representation of it NUL character.
+	c. chr(0) will return in form of hexademical character, which is \x00, while print would convert that into readable form, which is an empty character. Hence, expected result will be "this is a test\x00 string" and "this is a teststring"
+
+Problem 2:
+	a. Because UTF-8 would be from 0-255, which is from 8 bits from 00000000 -> 11111111, however, if encoding to either UTF-16 or 32, the integer representation will be much larger and sparse. Also, encoding to UTF-16 and 32 will be wasteful of memory, since it doesn't need to encode in that huge manner.
+	b. It's only true when a character corresponds to a byte, but when it's not, it will fail. Because the function forces every bytes to go back to decode mode, but not the whole sequence. So an example would be the string "hello! こんにちは!" will fail, because the Japanese character doesn't correspond to 1 byte.
+	c. Some examples are \xC3\x28, because the second byte 0x28 doesn't correspond to any byte in Unicode.
+
