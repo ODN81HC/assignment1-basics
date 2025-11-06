@@ -24,9 +24,8 @@ class BPETokenizer:
                 self.frequency_table[encoded_pre_token] = 1
     
     def bpe_merge(self, number_of_merge: int = 6):
-        for merge in range(number_of_merge):
+        for _ in range(number_of_merge):
             print(self.frequency_table)
-            print('\n')
             merges: dict[bytes, int] = {}
             max_frequent_pair: tuple[bytes, int] = tuple()
             # Loop through bytes pairs in pre-tokenization
@@ -43,41 +42,31 @@ class BPETokenizer:
                     if max_frequent_pair[-1] == merges[merge_key]:
                         # Find the lexicographically greater pair
                         max_frequent_pair = (max(max_frequent_pair[0], merge_key), merges[merge_key])
-            print(f"Max frequent pair is: {max_frequent_pair}")
-            # Update to vocabulary
-            new_pre_token_dict: dict[tuple[bytes, ...], int] = {}
-            removed_pre_token_key: list[tuple[bytes, ...]] = []
+            print(f"Max frequent pair is: {max_frequent_pair}\n")
+            self.update_to_vocabulary_and_frequency_table(max_frequent_pair[0])
 
-            self.vocabulary[len(self.vocabulary)] = max_frequent_pair[0]
-            # Merge pre-tokens again with newest max_frequent_pair key
-            for pre_token, values in self.frequency_table.items():
-                bytestring_pre_token = b''.join(pre_token)
-                if max_frequent_pair[0] in bytestring_pre_token:
-                    # Find the index then merge
-                    print('\n')
-                    print(max_frequent_pair[0])
-                    print(bytestring_pre_token)
-                    print(pre_token)
-                    merge_starting_index = bytestring_pre_token.index(max_frequent_pair[0])
-                    removed_pre_token_key.append(pre_token)
-                    pre_token_in_list = list(pre_token)
-                    pre_token_in_list[merge_starting_index] = max_frequent_pair[0]
-                    try:
-                        pre_token_in_list.pop(merge_starting_index+1)
-                    except Exception as e:
-                        print(e)
-                        print(pre_token_in_list)
-                        print(merge_starting_index)
-                        raise Exception
-                    new_pre_token_dict[tuple(pre_token_in_list)] = values
-            # Update self.frequency_table
-            for key in removed_pre_token_key:
-                self.frequency_table.pop(key, None)
-            self.frequency_table.update(new_pre_token_dict)
+    def update_to_vocabulary_and_frequency_table(self, max_frequent_pair):
+        # Update to vocabulary
+        old_and_new_pre_tokens: dict[tuple[bytes, ...], tuple[bytes, ...]] = {}
+        self.vocabulary[len(self.vocabulary)] = max_frequent_pair
+        # Merge pre-tokens again with newest max_frequent_pair key
+        for pre_token in self.frequency_table.keys():
+            pre_token_pairs = [pre_token[i] + pre_token[i+1] for i in range(len(pre_token) - 1)]
+            if max_frequent_pair in pre_token_pairs:
+                # Put them in a list of pairs and get the index of that
+                merge_starting_index = [i for i, n in enumerate(pre_token_pairs) if n == max_frequent_pair]
+                pre_token_in_list = list(pre_token)
+                pre_token_in_list = [value if i not in merge_starting_index else max_frequent_pair for i, value in enumerate(pre_token_in_list)]
+                pre_token_in_list = [value for i, value in enumerate(pre_token_in_list) if i not in [x+1 for x in merge_starting_index]]
+                old_and_new_pre_tokens[pre_token] = tuple(pre_token_in_list)
+
+        # Update self.frequency_table
+        for key, value in old_and_new_pre_tokens.items():
+            self.frequency_table[value] = self.frequency_table.pop(key)
 
 if __name__ == "__main__":
     test_corpus_1 = "low low low low low lower lower widest widest widest newest newest newest newest newest newest"
-    test_corpus_2 = "lowest lowest lowest lower low lower lower widest wider widerness newest newest newest newest newest newest"
+    test_corpus_2 = "lowest lowest lowest lowerwe low lower lower widest wider widerness newest newest newest newest newest newest"
     bpe_tokenizer = BPETokenizer()
     for corpus in [test_corpus_1, test_corpus_2]:
         bpe_tokenizer.pre_tokenization(corpus)
